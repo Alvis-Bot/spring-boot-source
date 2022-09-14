@@ -16,7 +16,7 @@ import javax.persistence.*;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
-public class User {
+public class User extends AuditEntity {
     @Id
     private String uid;
 
