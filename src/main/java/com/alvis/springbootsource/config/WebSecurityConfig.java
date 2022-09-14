@@ -1,5 +1,6 @@
 package com.alvis.springbootsource.config;
 
+import com.alvis.springbootsource.common.PageHolder;
 import com.alvis.springbootsource.component.FirebaseAuthFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +70,7 @@ public class WebSecurityConfig  {
         corsConfig.setAllowedOrigins(CORS_ALLOWED_ORIGINS);
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         corsConfig.setAllowedHeaders(Collections.singletonList("*"));
-//        corsConfig.setExposedHeaders(List.of(PageHolder.TOTAL_PAGES_HEADER));
+        corsConfig.setExposedHeaders(List.of(PageHolder.TOTAL_PAGES_HEADER));
         corsConfig.setAllowCredentials(false); // Disable if no cookies sent
 
         var source = new UrlBasedCorsConfigurationSource();
