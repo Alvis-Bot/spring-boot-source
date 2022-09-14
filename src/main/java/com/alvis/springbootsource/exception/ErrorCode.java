@@ -18,12 +18,18 @@ public enum ErrorCode {
     // Business errors
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Unauthorized"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "Access Denied"),
-    REQUEST_TOO_LARGE(HttpStatus.BAD_REQUEST, "Request is too large")
-
-    // Application errors
+    REQUEST_TOO_LARGE(HttpStatus.BAD_REQUEST, "Request is too large"),
 
 
-    ;
+    // Firebase errors
+    ID_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Id token is not found"),
+    INVALID_ID_TOKEN(HttpStatus.UNAUTHORIZED, "Id token is invalid"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"User not found" ),
+    USER_LOCKED(HttpStatus.FORBIDDEN, "User is locked"),
+    CANNOT_REGISTER_ADMIN(HttpStatus.CONFLICT, "Cannot register new admin"),
+    EMAIL_ALREADY_EXIST(HttpStatus.CONFLICT, "Email is adready exists"),
+    USER_ALREADY_EXIST(HttpStatus.CONFLICT, "User is already exists"),
+    FIREBASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Firebase error");
     private final HttpStatus status;
     private final String message;
 }

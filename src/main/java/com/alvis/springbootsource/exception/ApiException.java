@@ -1,9 +1,11 @@
 package com.alvis.springbootsource.exception;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.lang.Nullable;
 
 @Getter
+@Setter
 public class ApiException extends RuntimeException {
     private final ErrorCode code;
     private Boolean isLoggingEnabled = false;

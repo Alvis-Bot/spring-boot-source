@@ -4,6 +4,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.validation.BindException;
 
 import javax.validation.ConstraintViolationException;
+import java.util.Optional;
 
 public class CodeUtil {
     public static @Nullable String getBindExceptionMessage(
@@ -12,6 +13,14 @@ public class CodeUtil {
             return defaultMessage;
         }
         return ex.getAllErrors().get(0).getDefaultMessage();
+    }
+
+    public static Optional<String> extractTokenFromAuthHeader(String authHeader) {
+        final var HEADER_PREFIX = "Bearer ";
+        if (!authHeader.startsWith(HEADER_PREFIX)) {
+            return Optional.empty();
+        }
+        return Optional.of(authHeader.substring(HEADER_PREFIX.length()));
     }
 
     public static String getConstraintExceptionMessage(
