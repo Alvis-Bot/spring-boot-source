@@ -4,6 +4,8 @@ import com.alvis.springbootsource.common.Role;
 import com.alvis.springbootsource.component.Helper;
 import com.alvis.springbootsource.dto.AdminCreateDto;
 import com.alvis.springbootsource.dto.FcmTokenDto;
+import com.alvis.springbootsource.dto.UserCreateDto;
+import com.alvis.springbootsource.dto.UserUpdateDto;
 import com.alvis.springbootsource.entity.User;
 import com.alvis.springbootsource.exception.ApiException;
 import com.alvis.springbootsource.exception.ErrorCode;
@@ -25,7 +27,6 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class UserServiceImpl implements UserService {
 
     private  final Helper helper;
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
     private final FirebaseAuth firebaseAuth;
 
     @Value("${app.DEV_MODE}")
-    private Boolean MODE_DEV;
+    private Boolean DEV_MODE;
 
     @Override
     public User loginOrRegister(String authHeader, FcmTokenDto fcmToken) {
@@ -55,24 +56,66 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User createAdmin(String idToken, AdminCreateDto dto) {
-        if (MODE_DEV != Boolean.TRUE)
+    public User createAdmin(AdminCreateDto dto) {
+        if (DEV_MODE != Boolean.TRUE)
             throw new ApiException(ErrorCode.CANNOT_REGISTER_ADMIN);
-        System.out.println(idToken);
-        String uid = helper.extractUidFromIdToken(idToken).orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED, "Invalid id token"));;
-        if (userRepository.existsById(uid))
-            throw new ApiException(ErrorCode.USER_ALREADY_EXIST);
         if (userRepository.existsByEmail(dto.getEmail()))
             throw new ApiException(ErrorCode.EMAIL_ALREADY_EXIST);
-        UserRecord userRecord = getFirebaseUser(uid);
+
+        UserRecord userRecord = getFirebaseUserByEmail(dto.getEmail())
+                .orElseGet(() -> {
+                    UserRecord.CreateRequest createRequest = createFirebaseUserRequest(dto);
+                    return createNewFirebaseUser(createRequest);
+                });
         User user = createAdminEntity(userRecord.getUid(), dto);
         return userRepository.save(user);
+    }
+
+    private UserRecord createNewFirebaseUser(UserRecord.CreateRequest createRequest) {
+        try {
+            return firebaseAuth.createUser(createRequest);
+        } catch (FirebaseAuthException e) {
+            throw new ApiException(ErrorCode.FIREBASE_ERROR, e).setLoggingEnabled(true);
+        }
     }
 
     @Override
     public User getUser(String myUid) {
         return userRepository.findById(myUid)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Override
+    public User createUser(String idToken) {
+        String uid = helper.extractUidFromIdToken(idToken)
+                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED, "Invalid id token"));
+        if (userRepository.existsById(uid))
+            throw new ApiException(ErrorCode.USER_ALREADY_EXIST);
+
+        var userRecord = getFirebaseUser(uid);
+        var user = createUserEntity(uid, userRecord);
+        return userRepository.save(user);
+    }
+
+    private User createUserEntity(String uid, UserRecord dto) {
+        var user = new User();
+        user.setUid(uid);
+        user.setEmail(dto.getEmail());
+        user.setName(dto.getDisplayName());
+        user.setRole(Role.ROLE_USER);
+        return user;
+    }
+
+    @Override
+    public void updateUser(String myUid, UserUpdateDto dto) {
+        User user = getUser(myUid);
+        CodeUtil.updateRequiredField(dto.getName(), user::setName);
+        if (dto.getEmail() != null) {
+            if (!user.getRole().equals(Role.ROLE_ADMIN))
+                throw new ApiException(ErrorCode.CANNOT_CHANGE_ADMIN_EMAIL);
+            user.setEmail(dto.getEmail());
+        }
+        userRepository.save(user);
     }
 
 
@@ -93,14 +136,6 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    private UserRecord createNewFirebaseUser(UserRecord.CreateRequest createRequest) {
-        try {
-            return firebaseAuth.createUser(createRequest);
-        } catch (FirebaseAuthException e) {
-            log.error(e.getMessage());
-            throw  new ApiException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-    }
 
     private UserRecord.CreateRequest createFirebaseUserRequest(AdminCreateDto dto) {
         var createRequest = new UserRecord.CreateRequest();
@@ -120,10 +155,5 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-
-    private Optional<String> getUidFromAuthHeader(String authHeader) {
-        var idToken = CodeUtil.extractTokenFromAuthHeader(authHeader);
-        return helper.extractUidFromIdToken(String.valueOf(idToken));
-    }
 
 }

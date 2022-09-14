@@ -4,7 +4,10 @@ import org.springframework.lang.Nullable;
 import org.springframework.validation.BindException;
 
 import javax.validation.ConstraintViolationException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class CodeUtil {
     public static @Nullable String getBindExceptionMessage(
@@ -30,5 +33,23 @@ public class CodeUtil {
             return defaultMessage;
         }
         return firstViolation.get().getMessage();
+    }
+
+
+    public static <T> void updateRequiredField(@Nullable T value, Consumer<T> consumer) {
+        if (Objects.nonNull(value)) {
+            consumer.accept(value);
+        }
+    }
+
+    public static <T> void updateOptionalField(
+            @Nullable T value, Predicate<T> blankPredicate, Consumer<T> consumer) {
+        if (Objects.nonNull(value)) {
+            if (blankPredicate.test(value)) {
+                consumer.accept(null);
+            } else {
+                consumer.accept(value);
+            }
+        }
     }
 }

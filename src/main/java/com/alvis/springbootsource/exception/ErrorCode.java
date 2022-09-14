@@ -29,7 +29,8 @@ public enum ErrorCode {
     CANNOT_REGISTER_ADMIN(HttpStatus.CONFLICT, "Cannot register new admin"),
     EMAIL_ALREADY_EXIST(HttpStatus.CONFLICT, "Email is adready exists"),
     USER_ALREADY_EXIST(HttpStatus.CONFLICT, "User is already exists"),
-    FIREBASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Firebase error");
+    FIREBASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Firebase error"),
+    CANNOT_CHANGE_ADMIN_EMAIL(HttpStatus.CONFLICT, "Cannot change admin email"),;
     private final HttpStatus status;
     private final String message;
 }
