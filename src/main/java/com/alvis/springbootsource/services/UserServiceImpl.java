@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
 
     private final FirebaseAuth firebaseAuth;
 
-    @Value("${app.MODE_DEV}")
+    @Value("${app.DEV_MODE}")
     private Boolean MODE_DEV;
 
     @Override
