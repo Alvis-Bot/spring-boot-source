@@ -18,7 +18,7 @@ public class AuthFacade {
     public String getIdentity() {
         return getOptionalIdentity().orElseThrow(() -> {
             log.error("Retrieve identity but not logged in");
-            return new ApiException(ErrorCode.UNAUTHORIZED);
+            return new ApiException(ErrorCode.ACCESS_DENIED);
         });
     }
 

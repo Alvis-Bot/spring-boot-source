@@ -15,10 +15,4 @@ public class AdminCreateDto {
     @NotNull(message = "Missing email")
     @Email()
     private String email;
-
-    @NotEmpty(message = "Missing password")
-    private String password;
-
-    @NotBlank(message = "Blank name")
-    private String name;
 }

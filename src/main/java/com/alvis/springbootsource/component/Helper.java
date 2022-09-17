@@ -5,19 +5,22 @@ import com.alvis.springbootsource.exception.ApiException;
 import com.alvis.springbootsource.exception.ErrorCode;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.auth.UserRecord;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.aspectj.weaver.tools.cache.SimpleCacheFactory.enabled;
-
 @Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class Helper {
@@ -28,31 +31,58 @@ public class Helper {
         if (!authHeader.startsWith(HEADER_PREFIX)) return Optional.empty();
         return Optional.of(authHeader.substring(HEADER_PREFIX.length()));
     }
-    public Optional<String> extractUidFromIdToken(String idToken) {
+
+    public String extractUidFromIdToken(String idToken) {
         try {
-            return Optional.of(firebaseAuth.verifyIdToken(idToken).getUid());
+            return firebaseAuth.verifyIdToken(idToken).getUid();
+        } catch (FirebaseAuthException ex) {
+
+            if (ex.getAuthErrorCode().name().equals(ErrorCode.INVALID_ID_TOKEN.name())){
+                throw new ApiException(ErrorCode.INVALID_ID_TOKEN);
+            }else if(ex.getAuthErrorCode().name().equals(ErrorCode.EXPIRED_ID_TOKEN.name())){
+                throw new ApiException(ErrorCode.EXPIRED_ID_TOKEN);
+            }
+            if(ex.getAuthErrorCode().name().equals("USER_NOT_FOUND")){
+                throw  new ApiException(ErrorCode.USER_NOT_FOUND , ex.getMessage());
+            };
+            throw  new ApiException(ErrorCode.FIREBASE_ERROR , ex.getMessage());
+        }
+    }
+
+
+    public FirebaseToken extractUserFromIdToken(String idToken) {
+        try {
+            return firebaseAuth.verifyIdToken(idToken);
+        } catch (FirebaseAuthException ex) {
+
+            if (ex.getAuthErrorCode().name().equals(ErrorCode.INVALID_ID_TOKEN.name())){
+                throw new ApiException(ErrorCode.INVALID_ID_TOKEN);
+            }else if(ex.getAuthErrorCode().name().equals(ErrorCode.EXPIRED_ID_TOKEN.name())){
+                throw new ApiException(ErrorCode.EXPIRED_ID_TOKEN);
+            }
+            if(ex.getAuthErrorCode().name().equals("USER_NOT_FOUND")){
+                throw  new ApiException(ErrorCode.USER_NOT_FOUND , ex.getMessage());
+            };
+            throw  new ApiException(ErrorCode.FIREBASE_ERROR , ex.getMessage());
+        }
+    }
+
+    public Optional<UserRecord> getFirebaseUserByEmail(String email) {
+        try {
+            return Optional.ofNullable(firebaseAuth.getUserByEmail(email));
         } catch (FirebaseAuthException e) {
             return Optional.empty();
         }
     }
 
-
-//    public SimpleGrantedAuthority buildAuthorities(Role role) {
-//        switch (role){
-//            case ROLE_USER -> {
-//                return new SimpleGrantedAuthority(Role.ROLE_USER.name());
-//            }
-//            case ROLE_ADMIN -> {
-//                return new SimpleGrantedAuthority(Role.ROLE_ADMIN.name());
-//            }
-//        }
-//        throw new  ApiException(ErrorCode.INTERNAL_SERVER_ERROR);
-//    }
-
     public List<? extends GrantedAuthority> buildAuthorities(Role role) {
         final List<SimpleGrantedAuthority> authorities = new LinkedList<>();
         authorities.add(new SimpleGrantedAuthority(role.name()));
         return authorities;
+    }
+
+    public boolean isValidFcmTopic(String fcmTopic) {
+        return fcmTopic != null && !fcmTopic.isEmpty();
     }
 
     public boolean isValidFcmToken(String fcmToken) {
@@ -65,5 +95,6 @@ public class Helper {
                 .filter(this::isValidFcmToken)
                 .collect(Collectors.toList());
     }
+
 
 }

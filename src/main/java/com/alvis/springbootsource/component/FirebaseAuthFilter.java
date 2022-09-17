@@ -5,17 +5,18 @@ import com.alvis.springbootsource.exception.ApiException;
 import com.alvis.springbootsource.exception.ErrorCode;
 import com.alvis.springbootsource.exception.ErrorResponse;
 import com.alvis.springbootsource.repository.UserRepository;
-import com.alvis.springbootsource.util.CodeUtil;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.gson.Gson;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -23,11 +24,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
 @Configuration
+@Slf4j
 @RequiredArgsConstructor
 public class FirebaseAuthFilter extends OncePerRequestFilter {
 
@@ -36,32 +37,36 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
     private final Helper helper;
 
+    private FirebaseAuth firebaseAuth;
+
     private final UserRepository userRepository;
 
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-
-        var isContinue = checkAndAuthenticateRequest(request ,response);
+        boolean isLoginRoute = request.getRequestURI().equals("/api/auth/login");
+        var isContinue = isLoginRoute || checkAndAuthenticateRequest(request ,response);
         if (isContinue) filterChain.doFilter(request, response);
     }
 
     private boolean checkAndAuthenticateRequest(
             HttpServletRequest request , HttpServletResponse response) throws IOException {
         if (isAuthenticated()) return true;
-        Optional<String> authHeader = Optional.ofNullable(request.getHeader(JWT_AUTH_HEADER));
+        var authHeader = Optional.ofNullable(request.getHeader(JWT_AUTH_HEADER));
         if (authHeader.isEmpty()) return true;
 
         try {
-            User user = retrieveUserFromAuthHeader(authHeader.get());
+            var user = retrieveUserFromAuthHeader(authHeader.get());
             setAuthenticationForUser(user);
             return true;
-        } catch (BadCredentialsException e) {
-            var errorResponse = new ErrorResponse(ErrorCode.UNAUTHORIZED, e.getMessage());
+        } catch (ApiException ex ) {
+            var errorResponse = new ErrorResponse(ex.getCode());
             responseUnauthorized(response, errorResponse);
             return false;
         }
     }
+
+
 
     private void setAuthenticationForUser(User user) {
         Authentication auth = new UsernamePasswordAuthenticationToken(
@@ -75,15 +80,12 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     }
 
     private User retrieveUserFromAuthHeader(String authHeader) {
-        String idToken = helper.extractIdTokenFromAuthHeader(authHeader)
-                .orElseThrow(() -> new BadCredentialsException("Missing id token"));
-        String uid = helper.extractUidFromIdToken(idToken)
-                .orElseThrow(() -> new BadCredentialsException("Invalid id token"));
+        var idToken = helper.extractIdTokenFromAuthHeader(authHeader)
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_ID_TOKEN));
+        var uid = helper.extractUidFromIdToken(idToken);
         return userRepository.findById(uid)
-                .orElseThrow(() -> new BadCredentialsException("User not found"));
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
     }
-
-
 
     private void responseUnauthorized(
             HttpServletResponse response, ErrorResponse errorResponse) throws IOException {

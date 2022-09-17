@@ -4,8 +4,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.validation.BindException;
 
 import javax.validation.ConstraintViolationException;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -51,5 +50,32 @@ public class CodeUtil {
                 consumer.accept(value);
             }
         }
+    }
+
+    public static String[] addStringToArray(String[] array, String string) {
+        Set<String> set = arrayToMutableSet(array);
+        set.add(string);
+        return set.toArray(String[]::new);
+    }
+
+    public static <T> Set<T> arrayToMutableSet(T[] array) {
+        return new HashSet<>(List.of(array));
+    }
+
+    public static <T> List<T> arrayToList(T[] array) {
+        if (array == null) return List.of();
+        return List.of(array);
+    }
+
+    public static String[] removeStringFromArray(String[] array, String string) {
+        Set<String> set = arrayToMutableSet(array);
+        set.remove(string);
+        return set.toArray(String[]::new);
+    }
+
+    public static String[] removeAllStringsFromArray(String[] array, List<String> strings) {
+        Set<String> set = arrayToMutableSet(array);
+        strings.forEach(set::remove);
+        return set.toArray(String[]::new);
     }
 }

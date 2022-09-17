@@ -24,13 +24,19 @@ public enum ErrorCode {
     // Firebase errors
     ID_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Id token is not found"),
     INVALID_ID_TOKEN(HttpStatus.UNAUTHORIZED, "Id token is invalid"),
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"User not found" ),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User not found"),
     USER_LOCKED(HttpStatus.FORBIDDEN, "User is locked"),
+    EXPIRED_ID_TOKEN(HttpStatus.UNAUTHORIZED, "expired id token"),
+    MISSING_ID_TOKEN(HttpStatus.UNAUTHORIZED, "Missing id token"),
+    FIREBASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Firebase error"),
+
+
     CANNOT_REGISTER_ADMIN(HttpStatus.CONFLICT, "Cannot register new admin"),
     EMAIL_ALREADY_EXIST(HttpStatus.CONFLICT, "Email is adready exists"),
     USER_ALREADY_EXIST(HttpStatus.CONFLICT, "User is already exists"),
-    FIREBASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Firebase error"),
-    CANNOT_CHANGE_ADMIN_EMAIL(HttpStatus.CONFLICT, "Cannot change admin email"),;
+    CANNOT_CHANGE_ADMIN_EMAIL(HttpStatus.CONFLICT, "Cannot change admin email");
+
+
     private final HttpStatus status;
     private final String message;
 }

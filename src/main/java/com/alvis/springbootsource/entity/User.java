@@ -5,8 +5,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+import org.hibernate.annotations.TypeDefs;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
+import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import javax.annotation.Nullable;
 import javax.persistence.*;
 
@@ -16,6 +19,7 @@ import javax.persistence.*;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
+@TypeDefs({ @TypeDef(name = "string-array", typeClass = StringArrayType.class) })
 public class User extends AuditEntity {
     @Id
     private String uid;
@@ -26,10 +30,12 @@ public class User extends AuditEntity {
     // Bên ngoài muốn thay đổi thì phải thông qua UserFcmTopicService này
 
 
-    @Transient
+    @Type(type = "string-array")
+    @Column(nullable = false, columnDefinition = "text[]")
     private String[] fcmTokens = {};
 
-    @Transient
+    @Type(type = "string-array")
+    @Column(nullable = false, columnDefinition = "text[]")
     private String[] fcmTopics = {};
 
     private String name;

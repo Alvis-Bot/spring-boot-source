@@ -41,7 +41,7 @@ public class WebSecurityConfig  {
     protected SecurityFilterChain  configure(HttpSecurity http) throws Exception {
         // Allow all request by default, except for explicitly annotate @PreAuthorized
         http.csrf().disable().cors();
-        http.httpBasic().disable().formLogin().disable().logout().disable();
+        http.httpBasic().disable().formLogin().disable().logout().disable().httpBasic().disable();
         http.headers()
                 .cacheControl()
                 .disable()
